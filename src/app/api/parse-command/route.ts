@@ -65,12 +65,14 @@ Input: ${text}
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
+     headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${apiKey}`,
+  'HTTP-Referer': 'https://voicecode.vercel.app',
+  'X-Title': 'VoiceCode'
+},
       body: JSON.stringify({
-        model: "google/gemini-flash-1.5",
+        model: 'google/gemini-2.0-flash-exp:free',
         messages: [
           {
             role: "system",
@@ -85,9 +87,30 @@ Input: ${text}
     })
 
     const result = await response.json()
-    console.log('📦 OpenRouter response:', result)
-    const raw = result?.choices?.[0]?.message?.content
-    if (!raw) throw new Error('❌ No response text found')
+console.log('📦 OpenRouter response:', result)
+
+if (!response.ok) {
+  console.error('❌ OpenRouter API Error:', result)
+  return NextResponse.json(
+    {
+      error: result?.error?.message || 'OpenRouter request failed'
+    },
+    { status: response.status }
+  )
+}
+
+const raw = result?.choices?.[0]?.message?.content
+
+if (!raw || typeof raw !== 'string') {
+  console.error('❌ Invalid OpenRouter response:', result)
+
+  return NextResponse.json(
+    {
+      action: 'none'
+    },
+    { status: 200 }
+  )
+}
     const jsonMatch = raw.match(/\{[\s\S]*?\}/)
     if (!jsonMatch) throw new Error('❌ No JSON found')
 
